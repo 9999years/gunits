@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Web;
+using System.IO;
+using System.Text;
+using System.Linq;
 using HtmlAgilityPack;
 
 namespace gunits
@@ -32,12 +35,22 @@ namespace gunits
 
 		static void Main(string[] args)
 		{
+			bool verbose = false;
+			var query = new ArraySegment<string>(args);
+			if(args[0] == "--verbose") {
+				verbose = true;
+				query = new ArraySegment<string>(args, 1, args.Length - 1);
+			}
 			string encoded = HttpUtility.UrlEncode(
-				String.Join(" ", args)
+				String.Join(" ", query.ToArray())
 			);
 			string url = "https://google.com/search?q=" + encoded;
 			HtmlWeb web = new HtmlWeb();
 			var html = web.Load(url);
+			if(verbose) {
+				var sw = new FileStream("debug.html", FileMode.Create);
+				html.Save(sw, Encoding.UTF8);
+			}
 			// looking for:
 			// div#search > div > ol > div > div > div
 			// the built-in google search "card"

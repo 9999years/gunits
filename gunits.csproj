@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.6.7" />
     <Reference Include="System.Web" />
+    <Reference Include="mscorlib" />
   </ItemGroup>
 
 </Project>
