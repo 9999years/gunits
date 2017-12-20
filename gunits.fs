@@ -41,7 +41,7 @@ type NodeType = {
 }
 
 let DefaultNode = {
-    class_count = Option.Some 0
+    class_count = None
     name = None
     child_count = None
     text = Any
@@ -71,7 +71,7 @@ type HtmlNodeMatch (node : NodeType) =
             | None -> true
         && match this.node.children with
             | Option.Some children -> true
-            (*| ChildrenMatch.Some children -> children = HtmlNode.elements o*)
+            (*| Option.Some children -> children = HtmlNode.elements o*)
             | None -> true
         && match this.node.text with
             | StringMatch.Some text -> text = HtmlNode.directInnerText o
@@ -85,7 +85,29 @@ type HtmlNodeMatch (node : NodeType) =
         // 1.2. span with " = "
     // 2. a div with 2 classes and no chidren
 let is_card el =
-    false
+    el =
+        { DefaultNode with
+            class_count = Option.Some 1
+            child_count = Option.Some 2
+            name = Option.Some "div"
+            children =
+                Option.Some [
+                    { DefaultNode with
+                        class_count = Option.Some 2
+                        child_count = Option.Some 2
+                        name = Option.Some "div"
+                        children =
+                            Option.Some [
+                                { DefaultNode with
+                                    name = Option.Some "span"
+                                    text = NonEmpty };
+                                { DefaultNode with
+                                    name = Option.Some "span"
+                                    text = StringMatch.Some " = " } ] };
+                    { DefaultNode with
+                        name = Option.Some "div"
+                        class_count = Option.Some 2
+                        child_count = Option.Some 2 } ] }
 
 [<EntryPoint>]
 let main argv =
