@@ -28,24 +28,31 @@ let classes (el : HtmlNode) : string[] =
 
 type StringMatch =
     | Some of string
-    | NonEmpty // *any* non-empty text
-    | Any // *any* text
-    | None // non-empty text
+    | NonEmpty // any non-empty text
+    | Any // any text
 
-type ChildrenMatch<'T> =
-    | Some of 'T list
-    | Any
-    | None
+[<Struct>]
+type NodeType = {
+    class_count: Option<int>
+    name: Option<string>
+    child_count: Option<int>
+    text: StringMatch
+    children: Option<List<NodeType>>
+}
 
-type HtmlNodeMatch (class_count: int, name: string, child_count: int, children: ChildrenMatch<HtmlNodeMatch>, text: StringMatch) =
-    member this.class_count = class_count
-    member this.name        = name
-    member this.child_count = child_count
-    member this.children    = children
-    member this.text        = text
+let DefaultNode = {
+    class_count = Option.Some 0
+    name = None
+    child_count = None
+    text = Any
+    children = None
+}
+
+type HtmlNodeMatch (node : NodeType) =
+    member this.node = node
 
     override this.GetHashCode() =
-        hash (class_count, name, child_count, text, children)
+        hash (node)
 
     override this.Equals(o : obj) =
         match o with
@@ -53,31 +60,32 @@ type HtmlNodeMatch (class_count: int, name: string, child_count: int, children: 
         | _ -> false
 
     member this.HtmlNodeEquals (o : HtmlNode) =
-        this.class_count    = (classes o |> Array.length)
-        (*&& this.name        = o |> HtmlNode.name*)
-        (*&& this.child_count = o |> HtmlNode.elements |> len*)
-        && match this.children with
-            | ChildrenMatch.None -> this.child_count = 0
-            | ChildrenMatch.Any -> true
-            | ChildrenMatch.Some children -> children = HtmlNode.elements o
-        && match this.text with
+        match this.node.class_count with
+            | Option.Some c -> c = (classes o |> Array.length)
+            | None -> true
+        && match this.node.name with
+            | Option.Some n -> n = HtmlNode.name o
+            | None -> true
+        && match this.node.child_count with
+            | Option.Some c -> c = (HtmlNode.elements o |> List.length)
+            | None -> true
+        && match this.node.children with
+            | Option.Some children -> true
+            (*| ChildrenMatch.Some children -> children = HtmlNode.elements o*)
+            | None -> true
+        && match this.node.text with
             | StringMatch.Some text -> text = HtmlNode.directInnerText o
-            | StringMatch.NonEmpty -> "" <> HtmlNode.directInnerText o
-            | StringMatch.None -> "" = HtmlNode.directInnerText o
-            | StringMatch.Any -> true
+            | NonEmpty -> "" <> HtmlNode.directInnerText o
+            | Any -> true
 
 // we want to find a:
 // div with one class with two children:
     // 1. a div with 2 classes with 2 children:
-        // 1. span with text
-        // 2. span with " = "
+        // 1.1. span with text
+        // 1.2. span with " = "
     // 2. a div with 2 classes and no chidren
-let isCard el =
-    // el is a div
-    if HtmlNode.name el <> "div" then false else
-    // w/ 2 children
-    if HtmlNode.elements el |> List.length <> 2 then false else
-    true
+let is_card el =
+    false
 
 [<EntryPoint>]
 let main argv =
