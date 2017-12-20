@@ -1,3 +1,4 @@
+module gunits
 open FSharp.Data
 open System
 
@@ -14,6 +15,57 @@ let classes (el : HtmlNode) : string[] =
     |> HtmlNode.attributeValue "class"
     |> split " "
 
+(*let confirm_length (n : int) (arr : Collections.List<'a>) =*)
+    (*arr.Length = n*)
+
+(*let class_count el n =*)
+    (*classes el*)
+    (*|> confirm_length n*)
+
+(*let child_count el n =*)
+    (*HtmlNode.elements el*)
+    (*|> confirm_length n*)
+
+type StringMatch =
+    | Some of string
+    | NonEmpty // *any* non-empty text
+    | Any // *any* text
+    | None // non-empty text
+
+type ChildrenMatch<'T> =
+    | Some of 'T list
+    | Any
+    | None
+
+type HtmlNodeMatch (class_count: int, name: string, child_count: int, children: ChildrenMatch<HtmlNodeMatch>, text: StringMatch) =
+    member this.class_count = class_count
+    member this.name        = name
+    member this.child_count = child_count
+    member this.children    = children
+    member this.text        = text
+
+    override this.GetHashCode() =
+        hash (class_count, name, child_count, text, children)
+
+    override this.Equals(o : obj) =
+        match o with
+        | :? HtmlNode as n -> this.HtmlNodeEquals(n)
+        | _ -> false
+
+    member this.HtmlNodeEquals (o : HtmlNode) =
+        this.class_count    = (classes o |> Array.length)
+        (*&& this.name        = o |> HtmlNode.name*)
+        (*&& this.child_count = o |> HtmlNode.elements |> len*)
+        && match this.children with
+            | ChildrenMatch.None -> this.child_count = 0
+            | ChildrenMatch.Any -> true
+            | ChildrenMatch.Some children -> children = HtmlNode.elements o
+        && match this.text with
+            | StringMatch.Some text -> text = HtmlNode.directInnerText o
+            | StringMatch.NonEmpty -> "" <> HtmlNode.directInnerText o
+            | StringMatch.None -> "" = HtmlNode.directInnerText o
+            | StringMatch.Any -> true
+
 // we want to find a:
 // div with one class with two children:
     // 1. a div with 2 classes with 2 children:
@@ -23,23 +75,8 @@ let classes (el : HtmlNode) : string[] =
 let isCard el =
     // el is a div
     if HtmlNode.name el <> "div" then false else
-    let children = HtmlNode.elements el
-    // 2 children
-    if children.Length <> 2 then false else
-    let first = children.[0]
-    let first_classes = classes first
-    // 1ST CHILD
-    // has 2 classes
-    if first_classes.Length <> 2 then false else
-    let first_children = HtmlNode.elements first
-    // and 2 children
-    if first_children.Length <> 2 then false else
-    // 1st child is a span
-    if HtmlNode.hasName "span" first_children.[0] == false then false else
-
-    // 2nd child is a div
-    if HtmlNode.name children.[1] <> "div" then false else
-    // 2nd child has 2 classes
+    // w/ 2 children
+    if HtmlNode.elements el |> List.length <> 2 then false else
     true
 
 [<EntryPoint>]
