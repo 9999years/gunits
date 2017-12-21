@@ -59,6 +59,7 @@ type HtmlNodeMatch (node : NodeType) =
     override this.Equals(o : obj) =
         match o with
         | :? HtmlNode as n -> this.HtmlNodeEquals(n)
+        | :? HtmlNodeMatch as n -> this = n
         | _ -> false
 
     member private this.HtmlNodeEquals (o : HtmlNode) =
@@ -87,8 +88,8 @@ type HtmlNodeMatch (node : NodeType) =
         // 1.1. span with text
         // 1.2. span with " = "
     // 2. a div with 2 classes and no chidren
-let is_card el =
-    el =
+let is_card (el : HtmlNode) =
+    ( new HtmlNodeMatch(
         { DefaultNode with
             class_count = Option.Some 1
             child_count = Option.Some 2
@@ -110,7 +111,8 @@ let is_card el =
                     { DefaultNode with
                         name = Option.Some "div"
                         class_count = Option.Some 2
-                        child_count = Option.Some 2 } ] }
+                        child_count = Option.Some 2 } ] } )
+    ).Equals(el)
 
 [<EntryPoint>]
 let main argv =
@@ -121,8 +123,8 @@ let main argv =
     let doc =
         "https://google.com/search?q=" + query
         |> HtmlDocument.Load
-    (*let card =*)
-        (*doc.Descendents ["div"]*)
-        (*|>*)
-    printsn doc
+    let card =
+        doc.Descendants ["div"]
+        |> Seq.filter is_card
+    printsn card
     0
