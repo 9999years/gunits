@@ -38,49 +38,64 @@ let DefaultNode = {
 }
 
 type HtmlNodeMatch (node : NodeType) =
-    static member private childrenListCompare (children : Option<List<NodeType>>)
-        (os : List<HtmlNode>) =
-            match children with
-                | Option.Some cs ->
-                    match (cs, os) with
-                    | (c :: cs, o :: os) ->
-                        (new HtmlNodeMatch(c)).Equals(o)
-                        && HtmlNodeMatch.childrenListCompare (Option.Some cs) os
-                    | ([], []) -> true
-                    | ([], _) -> false
-                    | (_, []) -> false
-                | None -> true
+    static member private childrenListCompare
+        (children : List<NodeType>) (others : List<NodeType>) =
+            let compared =
+                List.compareWith (fun c o -> c.Equals(o) |> Convert.ToInt32)
+                    children others
+            not <| (compared |> Convert.ToBoolean)
+
+    static member private optionEq (comparer : 'T -> 'T -> bool)
+        (a : Option<'T>) (b : Option<'T>) =
+            match (a, b) with
+            | (Option.Some A, Option.Some B) -> comparer A B
+            | (Option.None, _) -> true
+            | (_, Option.None) -> true
+
+    static member private optionSimpleEq (a : Option<'T>) (b : Option<'T>) =
+        HtmlNodeMatch.optionEq (fun A B -> A = B) a b
+
+    static member private stringMatchEq (a : StringMatch) (b : StringMatch) =
+        match (a, b) with
+            | (StringMatch.Some A,   StringMatch.Some B)   -> A = B
+            | (StringMatch.NonEmpty, StringMatch.Some B)   -> "" <> B
+            | (StringMatch.Some A,   StringMatch.NonEmpty) -> "" <> A
+            | (_, _) -> true
 
     member this.node = node
+
+    member this.class_count = this.node.class_count
+    member this.name        = this.node.name
+    member this.child_count = this.node.child_count
+    member this.text        = this.node.text
+    member this.children    = this.node.children
+
+    new (node : HtmlNode) =
+        HtmlNodeMatch
+            {   class_count = Option.Some (classes node |> Array.length)
+                name        = Option.Some <| HtmlNode.name node
+                text        = StringMatch.Some <| HtmlNode.directInnerText node
+                child_count = Option.Some (HtmlNode.elements node |> List.length)
+                children    = Option.Some
+                    <| [ for n in HtmlNode.elements node do
+                            yield (new HtmlNodeMatch(n)).node ] }
 
     override this.GetHashCode() =
         hash (node)
 
     override this.Equals(o : obj) =
         match o with
-        | :? HtmlNode as n -> this.HtmlNodeEquals(n)
-        | :? HtmlNodeMatch as n -> this = n
+        | :? HtmlNode as n -> this.Equals(new HtmlNodeMatch(n))
+        | :? HtmlNodeMatch as n -> this.NodeMatchEquals(n)
         | _ -> false
 
-    member private this.HtmlNodeEquals (o : HtmlNode) =
-        match this.node.class_count with
-            | Option.Some c -> c = (classes o |> Array.length)
-            | None -> true
-        && match this.node.name with
-            | Option.Some n -> n = HtmlNode.name o
-            | None -> true
-        && match this.node.child_count with
-            | Option.Some c -> c = (HtmlNode.elements o |> List.length)
-            | None -> true
-        && match this.node.children with
-            | Option.Some children ->
-                HtmlNodeMatch.childrenListCompare
-                    (Option.Some children) (HtmlNode.elements o)
-            | None -> true
-        && match this.node.text with
-            | StringMatch.Some text -> text = HtmlNode.directInnerText o
-            | NonEmpty -> "" <> HtmlNode.directInnerText o
-            | Any -> true
+    member private this.NodeMatchEquals (o : HtmlNodeMatch) =
+        HtmlNodeMatch.optionSimpleEq this.class_count o.class_count
+        && HtmlNodeMatch.optionSimpleEq this.name o.name
+        && HtmlNodeMatch.optionSimpleEq this.child_count o.child_count
+        && HtmlNodeMatch.stringMatchEq this.text o.text
+        && HtmlNodeMatch.optionEq
+            HtmlNodeMatch.childrenListCompare this.children o.children
 
 // we want to find a:
 // div with one class with two children:
@@ -88,6 +103,17 @@ type HtmlNodeMatch (node : NodeType) =
         // 1.1. span with text
         // 1.2. span with " = "
     // 2. a div with 2 classes and no chidren
+// OR
+// a td with no classes and 1 child; an h2 with no classes with 1 child; a bold
+//
+// <div class="_Tsb">
+//   <div class="_Qeb _HOb">
+//       <span>10 miles</span>
+//       <span> = </span>
+//   </div>
+//   <div class="_Peb _rkc">633600 inches</div>
+// </div>
+
 let is_card (el : HtmlNode) =
     ( new HtmlNodeMatch(
         { DefaultNode with
@@ -101,17 +127,38 @@ let is_card (el : HtmlNode) =
                         child_count = Option.Some 2
                         name = Option.Some "div"
                         children =
-                            Option.Some [
-                                { DefaultNode with
-                                    name = Option.Some "span"
-                                    text = NonEmpty };
-                                { DefaultNode with
-                                    name = Option.Some "span"
-                                    text = StringMatch.Some " = " } ] };
+                            Option.None }
+                            (*Option.Some [*)
+                                (*{ DefaultNode with*)
+                                    (*name = Option.Some "span"*)
+                                    (*text = NonEmpty }*)
+                                (*{ DefaultNode with*)
+                                    (*name = Option.Some "span"*)
+                                    (*text = StringMatch.Some " = " } ] }*)
                     { DefaultNode with
                         name = Option.Some "div"
                         class_count = Option.Some 2
-                        child_count = Option.Some 2 } ] } )
+                        child_count = Option.Some 0 } ] } )
+                (*Option.None } )*)
+    ).Equals(el) ||
+
+    ( new HtmlNodeMatch(
+        { DefaultNode with
+            name        = Option.Some "td"
+            class_count = Option.Some 0
+            child_count = Option.Some 1
+            children    =
+                Option.Some [
+                    { DefaultNode with
+                        name        = Option.Some "h2"
+                        child_count = Option.Some 1
+                        class_count = Option.Some 0
+                        children    =
+                            Option.Some [
+                                { DefaultNode with
+                                    name        = Option.Some "b"
+                                    class_count = Option.Some 0
+                                    child_count = Option.Some 0 } ] } ] })
     ).Equals(el)
 
 [<EntryPoint>]
@@ -120,11 +167,19 @@ let main argv =
         argv
         |> String.concat " "
         |> Web.HttpUtility.UrlEncode
+    (*let doc =*)
+        (*"https://google.com/search?q=" + query*)
+        (*|> HtmlDocument.Load*)
     let doc =
-        "https://google.com/search?q=" + query
+        argv.[0]
+        |> IO.File.OpenRead
         |> HtmlDocument.Load
     let card =
-        doc.Descendants ["div"]
+        HtmlDocument.descendants true (fun t -> true) doc
         |> Seq.filter is_card
-    printsn card
+    (*let txt =*)
+        (*card*)
+        (*|> Seq.map (fun el -> HtmlNode.innerText el)*)
+    card |> Seq.head |> printsn
+    (*txt |> Seq.toList |> printsn*)
     0
