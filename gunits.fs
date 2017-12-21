@@ -15,17 +15,6 @@ let classes (el : HtmlNode) : string[] =
     |> HtmlNode.attributeValue "class"
     |> split " "
 
-(*let confirm_length (n : int) (arr : Collections.List<'a>) =*)
-    (*arr.Length = n*)
-
-(*let class_count el n =*)
-    (*classes el*)
-    (*|> confirm_length n*)
-
-(*let child_count el n =*)
-    (*HtmlNode.elements el*)
-    (*|> confirm_length n*)
-
 type StringMatch =
     | Some of string
     | NonEmpty // any non-empty text
@@ -49,6 +38,19 @@ let DefaultNode = {
 }
 
 type HtmlNodeMatch (node : NodeType) =
+    static member private childrenListCompare (children : Option<List<NodeType>>)
+        (os : List<HtmlNode>) =
+            match children with
+                | Option.Some cs ->
+                    match (cs, os) with
+                    | (c :: cs, o :: os) ->
+                        (new HtmlNodeMatch(c)).Equals(o)
+                        && HtmlNodeMatch.childrenListCompare (Option.Some cs) os
+                    | ([], []) -> true
+                    | ([], _) -> false
+                    | (_, []) -> false
+                | None -> true
+
     member this.node = node
 
     override this.GetHashCode() =
@@ -59,7 +61,7 @@ type HtmlNodeMatch (node : NodeType) =
         | :? HtmlNode as n -> this.HtmlNodeEquals(n)
         | _ -> false
 
-    member this.HtmlNodeEquals (o : HtmlNode) =
+    member private this.HtmlNodeEquals (o : HtmlNode) =
         match this.node.class_count with
             | Option.Some c -> c = (classes o |> Array.length)
             | None -> true
@@ -70,8 +72,9 @@ type HtmlNodeMatch (node : NodeType) =
             | Option.Some c -> c = (HtmlNode.elements o |> List.length)
             | None -> true
         && match this.node.children with
-            | Option.Some children -> true
-            (*| Option.Some children -> children = HtmlNode.elements o*)
+            | Option.Some children ->
+                HtmlNodeMatch.childrenListCompare
+                    (Option.Some children) (HtmlNode.elements o)
             | None -> true
         && match this.node.text with
             | StringMatch.Some text -> text = HtmlNode.directInnerText o
