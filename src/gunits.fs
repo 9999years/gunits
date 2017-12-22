@@ -38,24 +38,24 @@ let DefaultNode = {
 }
 
 type HtmlNodeMatch (node : NodeType) =
-    static member private childrenListCompare
+    static member childrenListCompare
         (children : List<NodeType>) (others : List<NodeType>) =
             let compared =
                 List.compareWith (fun c o -> c.Equals(o) |> Convert.ToInt32)
                     children others
             not <| (compared |> Convert.ToBoolean)
 
-    static member private optionEq (comparer : 'T -> 'T -> bool)
+    static member optionEq (comparer : 'T -> 'T -> bool)
         (a : Option<'T>) (b : Option<'T>) =
             match (a, b) with
             | (Option.Some A, Option.Some B) -> comparer A B
             | (Option.None, _) -> true
             | (_, Option.None) -> true
 
-    static member private optionSimpleEq (a : Option<'T>) (b : Option<'T>) =
-        HtmlNodeMatch.optionEq (fun A B -> A = B) a b
+    static member optionSimpleEq (a : Option<'T>) (b : Option<'T>) =
+        HtmlNodeMatch.optionEq (fun A B -> A.Equals(B)) a b
 
-    static member private stringMatchEq (a : StringMatch) (b : StringMatch) =
+    static member stringMatchEq (a : StringMatch) (b : StringMatch) =
         match (a, b) with
             | (StringMatch.Some A,   StringMatch.Some B)   -> A = B
             | (StringMatch.NonEmpty, StringMatch.Some B)   -> "" <> B
@@ -103,8 +103,6 @@ type HtmlNodeMatch (node : NodeType) =
         // 1.1. span with text
         // 1.2. span with " = "
     // 2. a div with 2 classes and no chidren
-// OR
-// a td with no classes and 1 child; an h2 with no classes with 1 child; a bold
 //
 // <div class="_Tsb">
 //   <div class="_Qeb _HOb">
@@ -138,28 +136,29 @@ let is_card (el : HtmlNode) =
                     { DefaultNode with
                         name = Option.Some "div"
                         class_count = Option.Some 2
-                        child_count = Option.Some 0 } ] } )
+                        child_count = Option.Some 0
+                        text = NonEmpty  } ] } )
                 (*Option.None } )*)
-    ).Equals(el)  ||
+    ).Equals(el)
 
-    ( new HtmlNodeMatch(
-        { DefaultNode with
-            name        = Option.Some "td"
-            class_count = Option.Some 0
-            child_count = Option.Some 1
-            children    =
-                Option.Some [
-                    { DefaultNode with
-                        name        = Option.Some "h2"
-                        child_count = Option.Some 1
-                        class_count = Option.Some 0
-                        children    =
-                            Option.Some [
-                                { DefaultNode with
-                                    name        = Option.Some "b"
-                                    class_count = Option.Some 0
-                                    child_count = Option.Some 0 } ] } ] })
-     ).Equals(el)
+    //|| ( new HtmlNodeMatch(
+        //{ DefaultNode with
+            //name        = Option.Some "td"
+            //class_count = Option.Some 0
+            //child_count = Option.Some 1
+            //children    =
+                //Option.Some [
+                    //{ DefaultNode with
+                        //name        = Option.Some "h2"
+                        //child_count = Option.Some 1
+                        //class_count = Option.Some 0
+                        //children    =
+                            //Option.Some [
+                                //{ DefaultNode with
+                                    //name        = Option.Some "b"
+                                    //class_count = Option.Some 0
+                                    //child_count = Option.Some 0 } ] } ] })
+     //).Equals(el)
 
 [<EntryPoint>]
 let main argv =
@@ -180,6 +179,6 @@ let main argv =
     (*let txt =*)
         (*card*)
         (*|> Seq.map (fun el -> HtmlNode.innerText el)*)
-    card |> Seq.head |> printsn
-    (*txt |> Seq.toList |> printsn*)
+    //card |> Seq.head |> printsn
+    card |> Seq.toList |> printsn
     0
