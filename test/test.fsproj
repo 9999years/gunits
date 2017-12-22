@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FsUnit" Version="3.0.0" />
+    <PackageReference Include="nunit" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="gunits_test.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\gunits.fsproj" />
+  </ItemGroup>
+
+</Project>

@@ -127,20 +127,20 @@ let is_card (el : HtmlNode) =
                         child_count = Option.Some 2
                         name = Option.Some "div"
                         children =
-                            Option.None }
-                            (*Option.Some [*)
-                                (*{ DefaultNode with*)
-                                    (*name = Option.Some "span"*)
-                                    (*text = NonEmpty }*)
-                                (*{ DefaultNode with*)
-                                    (*name = Option.Some "span"*)
-                                    (*text = StringMatch.Some " = " } ] }*)
+                            //Option.None }
+                            Option.Some [
+                                { DefaultNode with
+                                    name = Option.Some "span"
+                                    text = NonEmpty }
+                                { DefaultNode with
+                                    name = Option.Some "span"
+                                    text = StringMatch.Some " = " } ] }
                     { DefaultNode with
                         name = Option.Some "div"
                         class_count = Option.Some 2
                         child_count = Option.Some 0 } ] } )
                 (*Option.None } )*)
-    ).Equals(el) ||
+    ).Equals(el)  ||
 
     ( new HtmlNodeMatch(
         { DefaultNode with
@@ -159,7 +159,7 @@ let is_card (el : HtmlNode) =
                                     name        = Option.Some "b"
                                     class_count = Option.Some 0
                                     child_count = Option.Some 0 } ] } ] })
-    ).Equals(el)
+     ).Equals(el)
 
 [<EntryPoint>]
 let main argv =
