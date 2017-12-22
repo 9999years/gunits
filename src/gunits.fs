@@ -97,6 +97,28 @@ type HtmlNodeMatch (node : NodeType) =
         && HtmlNodeMatch.optionEq
             HtmlNodeMatch.childrenListCompare this.children o.children
 
+    static member private resolve (o : Option<'a>) (f : 'a -> string) =
+        match o with
+        | Option.Some x -> f x
+        | None -> ""
+
+    override this.ToString() =
+        [
+            HtmlNodeMatch.resolve this.name (fun n -> "<" + n + ">")
+            HtmlNodeMatch.resolve this.class_count (fun n -> (string n) + " classes")
+            ( match this.text with
+                | StringMatch.Some txt -> "inner text of `" + txt + "`"
+                | StringMatch.NonEmpty -> "non-empty inner text"
+                | StringMatch.Any -> "" )
+            HtmlNodeMatch.resolve this.child_count (fun n -> (string n) + " children")
+            HtmlNodeMatch.resolve this.children
+                (fun ns ->
+                        "children of " +
+                        string [ for n in ns do yield new HtmlNodeMatch(n) ] )
+        ]
+        |> List.filter (fun t -> t <> "")
+        |> String.concat " with "
+
 // we want to find a:
 // div with one class with two children:
     // 1. a div with 2 classes with 2 children:
@@ -112,7 +134,7 @@ type HtmlNodeMatch (node : NodeType) =
 //   <div class="_Peb _rkc">633600 inches</div>
 // </div>
 
-let is_card (el : HtmlNode) =
+let card_el =
     ( new HtmlNodeMatch(
         { DefaultNode with
             class_count = Option.Some 1
@@ -137,28 +159,10 @@ let is_card (el : HtmlNode) =
                         name = Option.Some "div"
                         class_count = Option.Some 2
                         child_count = Option.Some 0
-                        text = NonEmpty  } ] } )
-                (*Option.None } )*)
-    ).Equals(el)
+                        text = NonEmpty  } ] } ) )
 
-    //|| ( new HtmlNodeMatch(
-        //{ DefaultNode with
-            //name        = Option.Some "td"
-            //class_count = Option.Some 0
-            //child_count = Option.Some 1
-            //children    =
-                //Option.Some [
-                    //{ DefaultNode with
-                        //name        = Option.Some "h2"
-                        //child_count = Option.Some 1
-                        //class_count = Option.Some 0
-                        //children    =
-                            //Option.Some [
-                                //{ DefaultNode with
-                                    //name        = Option.Some "b"
-                                    //class_count = Option.Some 0
-                                    //child_count = Option.Some 0 } ] } ] })
-     //).Equals(el)
+let is_card (el : HtmlNode) =
+    card_el.Equals(el)
 
 [<EntryPoint>]
 let main argv =
@@ -180,5 +184,16 @@ let main argv =
         (*card*)
         (*|> Seq.map (fun el -> HtmlNode.innerText el)*)
     //card |> Seq.head |> printsn
-    card |> Seq.toList |> printsn
+    //card |> Seq.toList |> printsn
+
+    let node =
+        """<div class="g">
+            <h3></h3>
+            <div></div>
+        </div>"""
+        |> HtmlDocument.Parse
+        |> HtmlDocument.elements
+        |> List.head
+
+    new HtmlNodeMatch(node) |> printsn
     0

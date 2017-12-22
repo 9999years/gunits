@@ -121,6 +121,17 @@ let is_card_test_6 () =
     |> is_card_test false
 
 [<Test>]
+let is_card_test_7 () =
+    """
+    <div class="g">
+        <h3></h3>
+        <div></div>
+    </div>
+    """
+    |> is_card_test false
+
+
+[<Test>]
 let optionEq_test_1 () =
     HtmlNodeMatch.optionSimpleEq Option.None (Option.Some 100)
     |> should equal true
