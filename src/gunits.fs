@@ -135,7 +135,7 @@ type HtmlNodeMatch (node : NodeType) =
 // </div>
 
 let card_el =
-    ( new HtmlNodeMatch(
+    new HtmlNodeMatch(
         { DefaultNode with
             class_count = Option.Some 1
             child_count = Option.Some 2
@@ -159,7 +159,7 @@ let card_el =
                         name = Option.Some "div"
                         class_count = Option.Some 2
                         child_count = Option.Some 0
-                        text = NonEmpty  } ] } ) )
+                        text = NonEmpty  } ] } )
 
 let is_card (el : HtmlNode) =
     card_el.Equals(el)

@@ -85,7 +85,7 @@ let is_card_test_5 () =
     """
     |> is_card_test false
 
-[<Test>]
+//[<Test>]
 let is_card_test_6 () =
     """
     <div class="g">
@@ -120,7 +120,7 @@ let is_card_test_6 () =
     """
     |> is_card_test false
 
-[<Test>]
+//[<Test>]
 let is_card_test_7 () =
     """
     <div class="g">
@@ -129,7 +129,6 @@ let is_card_test_7 () =
     </div>
     """
     |> is_card_test false
-
 
 [<Test>]
 let optionEq_test_1 () =
@@ -171,3 +170,74 @@ let classes_test_3 =
     |> root
     |> classes
     |> should equal []
+
+[<Test>]
+let stringMatchEq_test_1 =
+    StringMatch.NonEmpty, StringMatch.Some("a")
+    |> HtmlNodeMatch.stringMatchEq
+    |> should equal true
+
+[<Test>]
+let stringMatchEq_test_2 =
+    StringMatch.Some("a"), StringMatch.NonEmpty
+    |> HtmlNodeMatch.stringMatchEq
+    |> should equal true
+
+[<Test>]
+let stringMatchEq_test_3 =
+    StringMatch.Some(" "), StringMatch.NonEmpty
+    |> HtmlNodeMatch.stringMatchEq
+    |> should equal true
+
+[<Test>]
+let stringMatchEq_test_4 =
+    StringMatch.Some(""), StringMatch.NonEmpty
+    |> HtmlNodeMatch.stringMatchEq
+    |> should equal false
+
+[<Test>]
+let stringMatchEq_test_5 =
+    StringMatch.Any, StringMatch.NonEmpty
+    |> HtmlNodeMatch.stringMatchEq
+    |> should equal true
+
+[<Test>]
+let childrenListCompare_test_1 =
+    [ DefaultNode ], [ DefaultNode ]
+    |> HtmlNodeMatch.childrenListCompare
+    |> should equal true
+
+[<Test>]
+let childrenListCompare_test_2 =
+    [ { DefaultNode with text = StringMatch.NonEmpty } ],
+    [ { DefaultNode with text = StringMatch.Some " " } ]
+    |> HtmlNodeMatch.childrenListCompare
+    |> should equal true
+
+[<Test>]
+let childrenListCompare_test_2 =
+    """
+    <h3></h3>
+    <div></div>
+    """
+    |> elements
+    |> HtmlNodeMatch.childrenListCompare
+        [ { DefaultNode with
+                class_count = Option.Some 2
+                child_count = Option.Some 2
+                name = Option.Some "div"
+                children =
+                    //Option.None }
+                    Option.Some [
+                        { DefaultNode with
+                            name = Option.Some "span"
+                            text = NonEmpty }
+                        { DefaultNode with
+                            name = Option.Some "span"
+                            text = StringMatch.Some " = " } ] }
+            { DefaultNode with
+                name = Option.Some "div"
+                class_count = Option.Some 2
+                child_count = Option.Some 0
+                text = NonEmpty  } ]
+    |> should equal false
