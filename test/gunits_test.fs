@@ -6,12 +6,12 @@ open NUnit.Framework
 open FsUnit
 
 let html (x : string) = HtmlDocument.Parse x
-let elements (x : string) =
+let elements x =
     x
     |> html
     |> HtmlDocument.elements
 
-let root (x : string) =
+let root x =
     x
     |> html
     |> HtmlDocument.elements
@@ -151,90 +151,82 @@ let optionEq_test_4 () =
     |> should equal true
 
 [<Test>]
-let classes_test_1 =
+let classes_test_1 () =
     """<div class="a b c"></div>"""
     |> root
     |> classes
     |> should equal ["a"; "b"; "c"]
 
 [<Test>]
-let classes_test_2 =
+let classes_test_2 () =
     """<div class="a"></div>"""
     |> root
     |> classes
     |> should equal ["a"]
 
 [<Test>]
-let classes_test_3 =
+let classes_test_3 () =
     """<div class=""></div>"""
     |> root
     |> classes
     |> should equal []
 
 [<Test>]
-let stringMatchEq_test_1 =
-    StringMatch.NonEmpty, StringMatch.Some("a")
-    |> HtmlNodeMatch.stringMatchEq
+let stringMatchEq_test_1 () =
+    HtmlNodeMatch.stringMatchEq
+        StringMatch.NonEmpty (StringMatch.Some("a"))
     |> should equal true
 
 [<Test>]
-let stringMatchEq_test_2 =
-    StringMatch.Some("a"), StringMatch.NonEmpty
-    |> HtmlNodeMatch.stringMatchEq
+let stringMatchEq_test_2 () =
+    HtmlNodeMatch.stringMatchEq
+        (StringMatch.Some("a")) StringMatch.NonEmpty
     |> should equal true
 
 [<Test>]
-let stringMatchEq_test_3 =
-    StringMatch.Some(" "), StringMatch.NonEmpty
-    |> HtmlNodeMatch.stringMatchEq
+let stringMatchEq_test_3 () =
+    HtmlNodeMatch.stringMatchEq
+        (StringMatch.Some(" ")) StringMatch.NonEmpty
     |> should equal true
 
 [<Test>]
-let stringMatchEq_test_4 =
-    StringMatch.Some(""), StringMatch.NonEmpty
-    |> HtmlNodeMatch.stringMatchEq
+let stringMatchEq_test_4 () =
+    HtmlNodeMatch.stringMatchEq
+        (StringMatch.Some("")) StringMatch.NonEmpty
     |> should equal false
 
 [<Test>]
-let stringMatchEq_test_5 =
-    StringMatch.Any, StringMatch.NonEmpty
-    |> HtmlNodeMatch.stringMatchEq
+let stringMatchEq_test_5 () =
+    HtmlNodeMatch.stringMatchEq
+        StringMatch.Any StringMatch.NonEmpty
     |> should equal true
 
 [<Test>]
-let childrenListCompare_test_1 =
-    [ DefaultNode ], [ DefaultNode ]
-    |> HtmlNodeMatch.childrenListCompare
+let childrenListCompare_test_1 () =
+    HtmlNodeMatch.childrenListCompare
+        [ DefaultNode ] [ DefaultNode ]
     |> should equal true
 
 [<Test>]
-let childrenListCompare_test_2 =
-    [ { DefaultNode with text = StringMatch.NonEmpty } ],
-    [ { DefaultNode with text = StringMatch.Some " " } ]
-    |> HtmlNodeMatch.childrenListCompare
+let childrenListCompare_test_2 () =
+    HtmlNodeMatch.childrenListCompare
+        [ { DefaultNode with text = StringMatch.NonEmpty } ]
+        [ { DefaultNode with text = StringMatch.Some " " } ]
     |> should equal true
 
 [<Test>]
-let childrenListCompare_test_2 =
+let childrenListCompare_test_3 () =
     """
     <h3></h3>
     <div></div>
     """
     |> elements
+    |> fun ns -> [ for n in ns do yield (new HtmlNodeMatch(n)).node ]
     |> HtmlNodeMatch.childrenListCompare
         [ { DefaultNode with
                 class_count = Option.Some 2
                 child_count = Option.Some 2
-                name = Option.Some "div"
-                children =
-                    //Option.None }
-                    Option.Some [
-                        { DefaultNode with
-                            name = Option.Some "span"
-                            text = NonEmpty }
-                        { DefaultNode with
-                            name = Option.Some "span"
-                            text = StringMatch.Some " = " } ] }
+                name = Option.Some "div" };
             { DefaultNode with
                 name = Option.Some "div"
                 class_count = Option.Some 2

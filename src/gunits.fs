@@ -173,10 +173,19 @@ let main argv =
     (*let doc =*)
         (*"https://google.com/search?q=" + query*)
         (*|> HtmlDocument.Load*)
+    if argv |> Array.length < 1 then
+        printfn "1 argument required!"
+        0
+    else
     let doc =
-        argv.[0]
-        |> IO.File.OpenRead
-        |> HtmlDocument.Load
+        try
+            argv.[0]
+            |> IO.File.OpenRead
+            |> HtmlDocument.Load
+        with
+            | (e : Exception) ->
+                "ERROR: " + e.Message |> printsn
+                HtmlDocument.New([])
     let card =
         HtmlDocument.descendants true (fun t -> true) doc
         |> Seq.filter is_card
