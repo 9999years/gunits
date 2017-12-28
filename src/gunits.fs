@@ -60,6 +60,9 @@ type HtmlNodeMatch (node : NodeType) =
             | (StringMatch.Some A,   StringMatch.Some B)   -> A = B
             | (StringMatch.NonEmpty, StringMatch.Some B)   -> "" <> B
             | (StringMatch.Some A,   StringMatch.NonEmpty) -> "" <> A
+            // matching is permissive, so even though combinations like Any and
+            // NonEmpty aren't guarenteed to be true, we choose to essentially
+            // ignore this comparison's value
             | (_, _) -> true
 
     member this.node = node
