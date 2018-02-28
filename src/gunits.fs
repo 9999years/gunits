@@ -38,11 +38,13 @@ let DefaultNode = {
 }
 
 type HtmlNodeMatch (node : NodeType) =
-    static member childrenListCompare
+
+    static member nodeTypeListEquals
         (children : List<NodeType>) (others : List<NodeType>) =
+            let equalsAsInt<'a when 'a : equality> (x : 'a) (y : 'a) =
+                (x, y) |> ((=) >> Convert.ToInt32)
             let compared =
-                List.compareWith (fun c o -> c.Equals(o) |> Convert.ToInt32)
-                    children others
+                List.compareWith equalsAsInt children others
             not <| (compared |> Convert.ToBoolean)
 
     static member optionEq (comparer : 'T -> 'T -> bool)
@@ -98,7 +100,7 @@ type HtmlNodeMatch (node : NodeType) =
         && HtmlNodeMatch.optionSimpleEq this.child_count o.child_count
         && HtmlNodeMatch.stringMatchEq this.text o.text
         && HtmlNodeMatch.optionEq
-            HtmlNodeMatch.childrenListCompare this.children o.children
+            HtmlNodeMatch.nodeTypeListEquals this.children o.children
 
     static member private resolve (o : Option<'a>) (f : 'a -> string) =
         match o with

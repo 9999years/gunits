@@ -203,13 +203,13 @@ let stringMatchEq_test_5 () =
 
 [<Test>]
 let childrenListCompare_test_1 () =
-    HtmlNodeMatch.childrenListCompare
+    HtmlNodeMatch.nodeTypeListEquals
         [ DefaultNode ] [ DefaultNode ]
     |> should equal true
 
 [<Test>]
 let childrenListCompare_test_2 () =
-    HtmlNodeMatch.childrenListCompare
+    HtmlNodeMatch.nodeTypeListEquals
         [ { DefaultNode with text = StringMatch.NonEmpty } ]
         [ { DefaultNode with text = StringMatch.Some " " } ]
     |> should equal true
@@ -222,7 +222,7 @@ let childrenListCompare_test_3 () =
     """
     |> elements
     |> fun ns -> [ for n in ns do yield (new HtmlNodeMatch(n)).node ]
-    |> HtmlNodeMatch.childrenListCompare
+    |> HtmlNodeMatch.nodeTypeListEquals
         [ { DefaultNode with
                 class_count = Option.Some 2
                 child_count = Option.Some 2
@@ -233,3 +233,10 @@ let childrenListCompare_test_3 () =
                 child_count = Option.Some 0
                 text = NonEmpty  } ]
     |> should equal false
+
+[<Test>]
+let listCompare_test_1 () =
+    //List.compareWith (=)
+        //[ DefaultNode ] [ DefaultNode ]
+    true
+    |> should equal true
